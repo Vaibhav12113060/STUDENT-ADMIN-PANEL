@@ -1,11 +1,14 @@
 const studentModel = require("../models/studentRecordModel");
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinaryConfig");
+const upload = require("../middlewares/uploadMiddleware");
+const fs = require("fs");
 
 // Add new Student Record
 
 const addNewStudentController = async (req, res) => {
   try {
-    const { FullName, Email, Gender, Status, Profile } = req.body;
+    const { FullName, Email, Gender, Status } = req.body;
 
     // Validation
 
@@ -16,16 +19,40 @@ const addNewStudentController = async (req, res) => {
       });
     }
 
+    // check for required file
+    if (!req.file) {
+      return res.status(400).send({
+        success: false,
+        message: "Profile image is required",
+      });
+    }
+
     // check already exist or not
 
     const existingStudent = await studentModel.findOne({ Email });
 
     if (existingStudent) {
+      // Delete the local file after upload from the profiles folder because when we create new student then it also stores into local storage
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log("Failed to delete local file:", err);
+      });
+
       return res.status(409).send({
         success: false,
         message: "Student with this Email ID already exist",
       });
     }
+
+    // Upload image to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "profiles",
+    });
+
+    // Delete the local file after upload from the profiles folder because when we create new student then it also stores into local storage
+
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.log("Failed to delete local file:", err);
+    });
 
     // Create New Record
     const new_record = await studentModel.create({
@@ -33,7 +60,8 @@ const addNewStudentController = async (req, res) => {
       Email,
       Gender,
       Status,
-      Profile,
+      Profile: result.secure_url,
+      cloudinary_id: result.public_id,
     });
 
     // Success Message
@@ -43,7 +71,13 @@ const addNewStudentController = async (req, res) => {
       new_record,
     });
   } catch (error) {
-    return res.Status(500).send({
+    //  Cleanup if something crashes
+
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    return res.status(500).send({
       success: false,
       message: "Error in Add New Student Controller API",
       error: error.message,
@@ -53,31 +87,74 @@ const addNewStudentController = async (req, res) => {
 
 // Display All Student Records
 
+// const displayAllRecordsController = async (req, res) => {
+//   try {
+//     const students = await studentModel.find();
+
+//     if (!students || (await students).length === 0) {
+//       return res.status(404).send({
+//         success: false,
+//         message: "No User is there",
+//       });
+//     }
+
+//     res.status(200).send({
+//       success: true,
+//       message: "Successfully fetched all students details",
+//       students,
+//       totalStudent: (await students).length,
+//     });
+//   } catch (error) {
+//     return res.status(500).send({
+//       success: false,
+//       message: "Error in Display All Records Controller API",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const displayAllRecordsController = async (req, res) => {
   try {
-    const students = await studentModel.find();
+    const search = req.query.search || "";
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
 
-    if (!students || (await students).length === 0) {
-      return res.status(404).send({
-        success: false,
-        message: "No User is there",
-      });
-    }
+    const skip = (page - 1) * limit;
+
+    const query = search
+      ? {
+          $or: [
+            { FullName: { $regex: search, $options: "i" } },
+            { Email: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const students = await studentModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalStudents = await studentModel.countDocuments(query);
 
     res.status(200).send({
       success: true,
-      message: "Successfully fetched all students details",
       students,
-      totalStudent: (await students).length,
+      totalStudents,
+      currentPage: page,
+      totalPages: Math.ceil(totalStudents / limit),
     });
   } catch (error) {
-    return res.status(500).send({
+    res.status(500).send({
       success: false,
-      message: "Error in Display All Records Controller API",
+      message: "Error fetching students",
       error: error.message,
     });
   }
 };
+
+// Display Student Details By ID
 
 const displayByStudentIDController = async (req, res) => {
   try {
@@ -114,6 +191,7 @@ const displayByStudentIDController = async (req, res) => {
   }
 };
 
+// Display Student Details By Name
 const displayStudentController = async (req, res) => {
   try {
     const searchValue = req.query.search?.trim();
@@ -153,6 +231,8 @@ const displayStudentController = async (req, res) => {
   }
 };
 
+// Modify Student Details
+
 const EditStudentRecordController = async (req, res) => {
   try {
     const student_id = req.params.id;
@@ -165,7 +245,7 @@ const EditStudentRecordController = async (req, res) => {
       });
     }
 
-    const { FullName, Email, Gender, Status, Profile } = req.body;
+    const { FullName, Email, Gender, Status } = req.body;
 
     // validate Stduent
     const student = await studentModel.findById(student_id);
@@ -182,8 +262,37 @@ const EditStudentRecordController = async (req, res) => {
     if (Email) student.Email = Email;
     if (Gender) student.Gender = Gender;
     if (Status) student.Status = Status;
-    if (Profile) student.Profile = Profile;
 
+    // If new image uploaded → replace
+    // if (req.file) {
+    //   const result = await cloudinary.uploader.upload(req.file.path, {
+    //     folder: "profiles",
+    //   });
+    //   student.Profile = result.secure_url;
+    // }
+
+    if (req.file) {
+      // Upload new image
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "profiles",
+      });
+
+      // Delete local file (VERY IMPORTANT)
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log("Failed to delete local file:", err);
+      });
+
+      // Delete OLD Cloudinary image
+      if (student.cloudinary_id) {
+        await cloudinary.uploader.destroy(student.cloudinary_id);
+      }
+
+      // Save new image
+      student.Profile = result.secure_url;
+      student.cloudinary_id = result.public_id;
+    }
+
+    // update into the record
     await student.save();
 
     res.status(200).send({
@@ -192,6 +301,12 @@ const EditStudentRecordController = async (req, res) => {
       student,
     });
   } catch (error) {
+    //  Cleanup if something crashes
+
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
     return res.status(500).send({
       success: false,
       message: "Error in Edit Stduent Record Controller API",
@@ -199,6 +314,56 @@ const EditStudentRecordController = async (req, res) => {
     });
   }
 };
+
+// Update Student Status
+
+const updateStudentStatusController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { Status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid Student ID",
+      });
+    }
+
+    if (!Status) {
+      return res.status(400).send({
+        success: false,
+        message: "Status is required",
+      });
+    }
+
+    const student = await studentModel.findByIdAndUpdate(
+      id,
+      { Status },
+      { new: true },
+    );
+
+    if (!student) {
+      return res.status(404).send({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      message: "Status updated successfully",
+      student,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Error updating status",
+      error: error.message,
+    });
+  }
+};
+
+//  Delete Student Details
 
 const deleteStudentRecordController = async (req, res) => {
   try {
@@ -239,6 +404,7 @@ module.exports = {
   displayAllRecordsController,
   displayStudentController,
   EditStudentRecordController,
+  updateStudentStatusController,
   deleteStudentRecordController,
   displayByStudentIDController,
 };
