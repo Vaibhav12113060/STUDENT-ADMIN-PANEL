@@ -1,0 +1,32 @@
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.student-table th,
+.student-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.student-table th {
+  background-color: #f4f4f4;
+  text-align: center;
+}
+
+.no-data {
+  text-align: center;
+  padding: 20px;
+  font-weight: bold;
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width: 768px) {
+  .student-table {
+    border: none;
+  }
+
+  .student-table thead {
+    display: none;
+  }
+}

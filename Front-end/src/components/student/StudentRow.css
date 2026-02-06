@@ -1,0 +1,104 @@
+/* DESKTOP */
+.student-row td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px;
+}
+
+/* PROFILE IMAGE */
+.student-profile-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ACTION DROPDOWN */
+.action-cell {
+  position: relative;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-btn {
+  padding: 6px 12px;
+  background-color: #8b2f2f;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.dropdown-btn:hover {
+  background-color: #732626;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  min-width: 120px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-menu button {
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-menu button:hover {
+  background-color: #f4f4f4;
+}
+
+.dropdown-menu .danger {
+  color: crimson;
+}
+
+/* MOBILE CARD VIEW */
+@media (max-width: 768px) {
+  .student-row {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+  }
+
+  .student-row td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    text-align: left;
+    border: none;
+  }
+
+  .student-row td::before {
+    content: attr(data-label);
+    font-weight: bold;
+  }
+
+  .dropdown,
+  .dropdown-btn {
+    width: 100%;
+  }
+
+  .dropdown-menu {
+    width: 100%;
+    left: 0;
+    right: 0;
+  }
+}

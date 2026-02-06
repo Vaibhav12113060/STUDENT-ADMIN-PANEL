@@ -1,0 +1,19 @@
+.status-toggle {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  color: white;
+  min-width: 90px;
+}
+
+/* Active */
+.status-toggle.active {
+  background-color: #2e7d32;
+}
+
+/* Inactive */
+.status-toggle.inactive {
+  background-color: #757575;
+}
