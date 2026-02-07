@@ -28,14 +28,33 @@ const app = express();
 //     credentials: true,
 //   }),
 // );
+const allowedOrigins = [
+  "*",
+  "http://localhost:5173", // or 3000
+  "https://student-admin-panel-wvu4.vercel.app",
+];
 
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error("CORS policy violation"), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
+
+// app.use(
+//   cors({
+//     origin: "*",
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     credentials: true,
+//   }),
+// );
 
 app.use(express.json());
 app.use(morgan("dev"));
