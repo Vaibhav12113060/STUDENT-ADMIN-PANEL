@@ -29,6 +29,18 @@ const studentSchema = new mongoose.Schema(
     cloudinary_id: {
       type: String,
     },
+    Phone: {
+      type: String,
+    },
+    Location: {
+      type: String,
+    },
+    Course: {
+      type: String,
+    },
+    DOB: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );

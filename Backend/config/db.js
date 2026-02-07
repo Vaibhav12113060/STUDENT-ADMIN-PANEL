@@ -5,10 +5,13 @@ const connect_DB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log(
-      `DB successfully connect with PORT: ${mongoose.connection.host}`.bgGreen,
+      `DB successfully connected with HOST: ${mongoose.connection.host}`
+        .bgGreen,
     );
+    return;
   } catch (error) {
-    console.log("DB Error : ", error, colors.bgRed);
+    console.log("DB Error:".bgRed, error.message.bgRed);
+    process.exit(1); // Exit the process if DB connection fails
   }
 };
 

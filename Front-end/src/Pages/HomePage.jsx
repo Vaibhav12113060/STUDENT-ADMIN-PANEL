@@ -90,7 +90,7 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* 🔹 Top bar */}
-      <div className="home-header">
+      {/* <div className="home-header">
         <input
           type="text"
           placeholder="Search student..."
@@ -102,6 +102,24 @@ const HomePage = () => {
         />
 
         <button onClick={handleExport}>Export CSV</button>
+      </div> */}
+      <div className="home-header">
+        <div className="header-inner">
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search by name, email.............."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+
+          <button className="export-btn" onClick={handleExport}>
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/*  Table */}

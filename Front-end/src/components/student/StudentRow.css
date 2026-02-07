@@ -1,11 +1,18 @@
-/* DESKTOP */
+/* 
+   DESKTOP TABLE STYLES
+*/
+
 .student-row td {
   text-align: center;
   vertical-align: middle;
   padding: 8px;
+  font-size: 14px;
 }
 
-/* PROFILE IMAGE */
+/* 
+   PROFILE IMAGE
+*/
+
 .student-profile-img {
   width: 40px;
   height: 40px;
@@ -13,7 +20,10 @@
   object-fit: cover;
 }
 
-/* ACTION DROPDOWN */
+/*
+   ACTION DROPDOWN
+ */
+
 .action-cell {
   position: relative;
 }
@@ -30,12 +40,15 @@
   border: none;
   cursor: pointer;
   border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .dropdown-btn:hover {
   background-color: #732626;
 }
 
+/* Dropdown menu */
 .dropdown-menu {
   position: absolute;
   top: 100%;
@@ -66,7 +79,10 @@
   color: crimson;
 }
 
-/* MOBILE CARD VIEW */
+/* 
+   MOBILE CARD VIEW
+ */
+
 @media (max-width: 768px) {
   .student-row {
     display: block;
@@ -74,7 +90,7 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 10px;
-    background-color: #fff;
+    background-color: #ffffff;
   }
 
   .student-row td {
@@ -84,16 +100,26 @@
     padding: 6px 0;
     text-align: left;
     border: none;
+    font-size: 13px;
   }
 
   .student-row td::before {
     content: attr(data-label);
-    font-weight: bold;
+    font-weight: 600;
+    color: #555;
   }
 
-  .dropdown,
-  .dropdown-btn {
+  /* Dropdown positioning on mobile */
+  .dropdown {
     width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .dropdown-btn {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 13px;
   }
 
   .dropdown-menu {
