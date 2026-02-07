@@ -2,7 +2,21 @@ const studentModel = require("../models/studentRecordModel");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinaryConfig");
 const upload = require("../middlewares/uploadMiddleware");
-const fs = require("fs");
+const streamifier = require("streamifier");
+
+// Helper function to upload buffer to Cloudinary
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "profiles" },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      },
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+};
 
 // Add new Student Record
 
@@ -44,37 +58,14 @@ const addNewStudentController = async (req, res) => {
     const existingStudent = await studentModel.findOne({ Email });
 
     if (existingStudent) {
-      // Delete the local file after upload from the profiles folder because when we create new student then it also stores into local storage
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.log("Failed to delete local file:", err);
-      });
-
       return res.status(409).send({
         success: false,
         message: "Student with this Email ID already exist",
       });
     }
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "profiles",
-    });
-
-    // Delete the local file after upload from the profiles folder because when we create new student then it also stores into local storage
-
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.log("Failed to delete local file:", err);
-    });
-
-    // Create New Record
-    // const new_record = await studentModel.create({
-    //   FullName,
-    //   Email,
-    //   Gender,
-    //   Status,
-    //   Profile: result.secure_url,
-    //   cloudinary_id: result.public_id,
-    // });
+    // Upload image to Cloudinary from buffer
+    const result = await uploadToCloudinary(req.file.buffer);
 
     const new_record = await studentModel.create({
       FullName,
@@ -96,12 +87,6 @@ const addNewStudentController = async (req, res) => {
       new_record,
     });
   } catch (error) {
-    //  Cleanup if something crashes
-
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
     return res.status(500).send({
       success: false,
       message: "Error in Add New Student Controller API",
@@ -300,15 +285,8 @@ const EditStudentRecordController = async (req, res) => {
     // }
 
     if (req.file) {
-      // Upload new image
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "profiles",
-      });
-
-      // Delete local file (VERY IMPORTANT)
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.log("Failed to delete local file:", err);
-      });
+      // Upload new image from buffer
+      const result = await uploadToCloudinary(req.file.buffer);
 
       // Delete OLD Cloudinary image
       if (student.cloudinary_id) {
@@ -329,12 +307,6 @@ const EditStudentRecordController = async (req, res) => {
       student,
     });
   } catch (error) {
-    //  Cleanup if something crashes
-
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
     return res.status(500).send({
       success: false,
       message: "Error in Edit Stduent Record Controller API",

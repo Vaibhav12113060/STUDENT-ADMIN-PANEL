@@ -29,8 +29,8 @@ const app = express();
 //   }),
 // );
 const allowedOrigins = [
-  "*",
-  "http://localhost:5173", // or 3000
+  "http://localhost:5173",
+  "http://localhost:3000",
   "https://student-admin-panel-wvu4.vercel.app",
 ];
 
@@ -39,10 +39,17 @@ app.use(
     origin: function (origin, callback) {
       // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error("CORS policy violation"), false);
+
+      // Allow any vercel.app subdomain or localhost
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        origin.includes("localhost")
+      ) {
+        return callback(null, true);
       }
-      return callback(null, true);
+
+      return callback(new Error("CORS policy violation"), false);
     },
     credentials: true,
   }),
