@@ -254,8 +254,17 @@ const EditStudentRecordController = async (req, res) => {
       DOB,
     } = req.body;
 
-    // Check existing email
+    // Fetch student first
+    const student = await studentModel.findById(student_id);
 
+    if (!student) {
+      return res.status(404).send({
+        success: false,
+        message: "Student with this ID does not Exist",
+      });
+    }
+
+    // Check existing email (after student is fetched)
     if (Email && Email !== student.Email) {
       const emailExists = await studentModel.findOne({ Email });
       if (emailExists) {
@@ -264,16 +273,6 @@ const EditStudentRecordController = async (req, res) => {
           message: "Email already in use",
         });
       }
-    }
-
-    // validate Stduent
-    const student = await studentModel.findById(student_id);
-
-    if (!student) {
-      return res.status(404).send({
-        success: false,
-        message: "Student with this ID does not Exist",
-      });
     }
 
     // Updating the field values
